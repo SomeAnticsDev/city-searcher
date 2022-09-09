@@ -5,14 +5,12 @@ import {
   ComboboxPopover,
   useComboboxState,
 } from "ariakit/combobox";
-import { Form, useSearchParams } from "@remix-run/react";
+import { Form, useSearchParams, useFetcher } from "@remix-run/react";
 import type { City } from "~/models/city-data";
-import { cities } from "~/models/city-data";
-import { matchSorter } from "match-sorter";
 
 export default function Index() {
-  let [term, setTerm] = React.useState("");
-  let cities = useCityMatch(term);
+  let fetcher = useFetcher<City[]>();
+  let cities = fetcher.data;
   let [searchParams] = useSearchParams();
   let combobox = useComboboxState({ gutter: 8, sameWidth: true });
 
@@ -29,11 +27,11 @@ export default function Index() {
               name="city"
               className="combobox"
               onChange={(e) => {
-                setTerm(e.target.value);
+                fetcher.load(`/city-search?q=${e.target.value}`)
               }}
             />
           </div>
-          {cities.length > 0 ? (
+          {cities?.length > 0 ? (
             <ComboboxPopover state={combobox} className="popover">
               {cities.slice(0, 20).map((result, index) => {
                 return (
@@ -61,17 +59,5 @@ export default function Index() {
         </div>
       </Form>
     </div>
-  );
-}
-
-function useCityMatch(term: string): City[] {
-  return React.useMemo(
-    () =>
-      term.trim() === ""
-        ? []
-        : matchSorter(cities, term, {
-            keys: [(item) => `${item.city}, ${item.state}`],
-          }),
-    [term]
   );
 }
